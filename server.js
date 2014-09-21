@@ -39,5 +39,5 @@ io.on('connection', function(socket){
 
 });
 
-io.listen(1337);
+io.listen(443);
 
