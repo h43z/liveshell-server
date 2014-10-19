@@ -1,7 +1,61 @@
-var io = require('socket.io')();
-var crypto = require('crypto');
-// test
-var streams = {};
+var WebSocketServer = require('ws').Server;
+var stream = new WebSocketServer({port: 8080, path: "/stream"});
+var view = new WebSocketServer({port: 8081, path: "/view"});
+
+stream.on('connection', function(ws){
+  console.log('new stream connection');
+  ws.on('message', function(msg) {
+    var json = validate(msg);
+    if(json){
+      router(json);
+    }
+  });
+ 
+  ws.send('hello streamer');
+});
+
+view.on('connection', function(ws){
+  console.log('new view connection');
+  ws.on('message', function(msg) {
+    var json = validate(msg);
+    if(json){
+      router(json);
+    }
+  });
+ 
+  ws.send('hello viewer');
+});
+
+var cmds = {
+  'o': function(data){
+    console.log(data);     
+  },
+}
+
+function validate(msg){
+  try{
+    json = JSON.parse(msg);
+  }catch(exception) {
+    json = null;
+    console.log('Invalid json');
+    return;
+  }
+
+  if(json && cmds.hasOwnProperty(Object.keys(json)[0])){
+    return json;
+  }else{
+    console.log('Invalid cmd');
+    return false;
+  }
+}
+
+function router(json){
+  cmds[Object.keys(msg)[0]](msg[Object.keys(msg)[0]]);
+}
+
+
+
+/*
 
 io.on('connection', function(socket){
   console.log('New socket connection with id',  socket.id);
@@ -40,4 +94,4 @@ io.on('connection', function(socket){
 });
 
 io.listen(443);
-
+*/
