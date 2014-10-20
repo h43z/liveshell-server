@@ -1,5 +1,3 @@
-var events = require('events');
-var emitter = new events.EventEmitter();
 var WebSocketServer = require('ws').Server;
 var wss = new WebSocketServer({port: 8080});
 
