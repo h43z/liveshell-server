@@ -1,36 +1,102 @@
+var events = require('events');
+var emitter = new events.EventEmitter();
 var WebSocketServer = require('ws').Server;
-var stream = new WebSocketServer({port: 8080, path: "/stream"});
-var view = new WebSocketServer({port: 8081, path: "/view"});
+var wss = new WebSocketServer({port: 8080});
 
-stream.on('connection', function(ws){
-  console.log('new stream connection');
-  ws.on('message', function(msg) {
-    var json = validate(msg);
-    if(json){
-      router(json);
-    }
-  });
- 
-  ws.send('hello streamer');
-});
-
-view.on('connection', function(ws){
-  console.log('new view connection');
-  ws.on('message', function(msg) {
-    var json = validate(msg);
-    if(json){
-      router(json);
-    }
-  });
- 
-  ws.send('hello viewer');
-});
+var clients = {};
+var streamer = {};
+var viewer = {};
+var registeredNames = {};
 
 var cmds = {
-  'o': function(data){
-    console.log(data);     
+  //register
+  'r': function(socketId, userName){
+    var token = Math.random().toString(36).slice(2);
+    if(streamer[socketId]){
+      clients[socketId].send(JSON.stringify({'error': 'Already registered'}));
+      return;
+    } 
+    if(!userName){
+      do{
+        var userName = Math.random().toString(36).slice(2);
+      }while(registeredNames.hasOwnProperty(userName));
+    }
+
+    if(registeredNames.hasOwnProperty(userName)){
+      clients[socketId].send(JSON.stringify({'error': 'Username already taken'}));
+    }else{
+      //nyi: make persistent with db
+      registeredNames[userName] = socketId;
+      streamer[socketId] = {
+        userName: userName,
+        token: token,
+        password: null,
+        viewers: [],
+        rows: null,
+        cols: null,
+        socket: clients[socketId],
+        broadcast: function(msg){
+          this.viewers.forEach(function(viewer){
+            clients[viewer].send(JSON.stringify(msg));
+          });
+        },
+        addViewer: function(viewer){
+          if(this.viewers.indexOf(viewer) === -1){
+            this.viewers.push(viewer);
+           }
+        },
+        removeViewer: function(viewer){
+         var index = this.viewers.indexOf(viewer); 
+          if(index > -1){
+            this.viewers.splice(index, 1);  
+          }
+        }
+      }; 
+      clients[socketId].send(JSON.stringify({'userName': userName, 'token': token}));
+    }
+  },
+  //shell output from a streamer
+  'o': function(socketId, output){
+    // return if not registered
+    if(!streamer[socketId]) return;
+    streamer[socketId].broadcast(output);
+    
+  },
+  //new viewer to streamer 
+  'v': function(socketId, userName){
+    if(streamer[registeredNames[userName]]){
+      streamer[registeredNames[userName]].addViewer(socketId);
+      if(viewer[socketId]){
+        viewer[socketId].push(userName);
+      }else{
+        viewer[socketId] = [userName];
+      }
+    }
   },
 }
+
+wss.on('connection', function(ws){
+  console.log('new stream connection');
+  var socketId = ws.upgradeReq.headers['sec-websocket-key'];
+  clients[socketId] = ws;
+
+  ws.on('message', function(msg) {
+    var json = validate(msg);
+    if(json){
+      cmds[Object.keys(json)[0]](socketId, json[Object.keys(json)[0]]);
+     }
+  }); 
+
+  ws.on('close', function(){
+    if(viewer[socketId]){
+      viewer[socketId].forEach(function(userName){
+        streamer[registeredNames[userName]].removeViewer(socketId);
+      });
+    }
+    delete streamer[socketId];
+    delete clients[socketId];
+  });
+});
 
 function validate(msg){
   try{
@@ -48,50 +114,3 @@ function validate(msg){
     return false;
   }
 }
-
-function router(json){
-  cmds[Object.keys(msg)[0]](msg[Object.keys(msg)[0]]);
-}
-
-
-
-/*
-
-io.on('connection', function(socket){
-  console.log('New socket connection with id',  socket.id);
-  var id;
-
-  socket.on('register', function(){    
-    id = crypto.createHash('md5').update(socket.id).digest('hex');
-		streams[id] = {size:{}};
-    socket.emit('registered', id);
-    socket.join(id);
-    console.log('New streamer registered with id', id);
-  });
-
-  socket.on('view', function(streamId){
-		console.log('New viewer to', streamId);
-    if(streams.hasOwnProperty(streamId)){
-      socket.join(streamId);
-      socket.emit('resize', streams[streamId].size);
-    }
-  });
-
-  socket.on('o', function(data){
-    socket.to(id).emit('o', data);
-  });
-
-  socket.on('resize', function(data){
-    streams[id].size = data;
-    socket.to(id).emit('resize', data);
-  });
-  
-  socket.on('disconnect', function(){
-    console.log('Disconnect from id', socket.id);
-    delete streams[id];
-  });
-
-});
-
-io.listen(443);
-*/
