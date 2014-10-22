@@ -2,7 +2,7 @@ var WebSocketServer = require('ws').Server;
 var wss = new WebSocketServer({port: 8080});
 var Datastore = require('nedb');
 var registeredNamesDB = new Datastore({ filename: 'registeredNames.db', autoload: true });
-
+var DEBUG = true;
 var clients = {};
 var streamer = {};
 var viewer = {};
@@ -50,8 +50,7 @@ var cmds = {
   'o': function(socketId, output){
     // return if not registered
     if(!streamer[socketId]) return;
-    streamer[socketId].broadcast(output);
-    
+    streamer[socketId].broadcast({'o': output});
   },
   //viewer follows output of streamer 
   'v': function(socketId, userName){
@@ -116,7 +115,9 @@ function newStreamer(socketId, token, userName){
 		"cols": null,
 		"broadcast": function(msg){
 			this.viewers.forEach(function(viewer){
+        msg["f"] = streamer[socketId].userName;
 				clients[viewer].send(JSON.stringify(msg));
+        log('send',msg,'to', viewer);
 			});
 		},
 		"addViewer": function(viewer){
@@ -133,3 +134,15 @@ function newStreamer(socketId, token, userName){
 	};  
 }
 
+function log(){
+	if(!DEBUG) return;
+  var s = '';
+  for(var i = 0; i < arguments.length; i++){
+    if(typeof(arguments[i]) === 'object'){
+      s += JSON.stringify(arguments[i]) + ' ';
+    }else{
+      s += arguments[i] + ' ';
+    }
+  }
+	console.log(new Date().toJSON(), '|', s);
+}
