@@ -82,6 +82,7 @@ wss.on('connection', function(ws){
   clients[socketId] = ws;
 
   ws.on('message', function(msg) {
+    log(msg);
     var json = validate(msg);
     if(json){
       cmds[Object.keys(json)[0]](socketId, json[Object.keys(json)[0]]);
@@ -97,6 +98,11 @@ wss.on('connection', function(ws){
     delete streamer[socketId];
     delete clients[socketId];
   });
+
+  ws.on('error', function(err){
+    log(err);
+  });
+
 });
 
 function validate(msg){
