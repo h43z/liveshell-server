@@ -2,6 +2,7 @@ var WebSocketServer = require('ws').Server;
 var wss = new WebSocketServer({port: 8080});
 var Datastore = require('nedb');
 var registeredNamesDB = new Datastore({ filename: 'registeredNames.db', autoload: true });
+
 var DEBUG = true;
 var clients = {};
 var streamer = {};
@@ -48,7 +49,7 @@ var cmds = {
   },
   //output from a streamer
   'o': function(socketId, output){
-    // return if not registered
+    // return if not streaming
     if(!streamer[socketId]) return;
     streamer[socketId].broadcast({'o': output});
   },
@@ -61,8 +62,18 @@ var cmds = {
       }else{
         viewer[socketId] = [userName];
       }
+    }else{
+		  clients[socketId].send(JSON.stringify({"error": userName + " is not streaming"}));
     }
   },
+   //resize terminal
+  're': function(socketId, geometry){ 
+    if(!streamer[socketId] || !Array.isArray(geometry)) return;
+    log(geometry);
+    streamer[socketId].cols = geometry[0] || 80;
+    streamer[socketId].rows = geometry[1] || 24;
+    streamer[socketId].broadcast({'re': geometry});
+  }
 }
 
 wss.on('connection', function(ws){
@@ -107,6 +118,7 @@ function validate(msg){
 
 function newStreamer(socketId, token, userName){
 	streamer[socketId] = {
+    "socket": clients[socketId],
 		"userName": userName,
 		"token": token,
 		"password": null,
@@ -123,12 +135,14 @@ function newStreamer(socketId, token, userName){
 		"addViewer": function(viewer){
 			if(this.viewers.indexOf(viewer) === -1){
 				this.viewers.push(viewer);
+        this.socket.send(JSON.stringify({"vu": this.viewers.length})); 
 			 }
 		},
 		"removeViewer": function(viewer){
 		 var index = this.viewers.indexOf(viewer); 
 			if(index > -1){
 				this.viewers.splice(index, 1);  
+        this.socket.send(JSON.stringify({"vu": this.viewers.length})); 
 			}
 		}
 	};  
