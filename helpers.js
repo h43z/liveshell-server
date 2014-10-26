@@ -3,6 +3,9 @@ var cmds = require('./commands.js')
 exports.validate = function(msg, id){
   try{
     json = JSON.parse(msg);
+    if(json == null || typeof json !== 'object'){
+			throw "not my definition of json, sowy";
+		}
   }catch(exception) {
     json = null;
     var error = {error: "invalid json"};
