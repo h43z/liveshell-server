@@ -33,7 +33,7 @@ var cmds = {
 			}
 		});
   },
-	"stream": function(id, data){
+	"login": function(id, data){
 		if(!Array.isArray(data)){
 			var error = {error: "no user/pass array given"};
 			helpers.log(error);
@@ -77,12 +77,11 @@ var cmds = {
   },
    //resize terminal
    //hier weitermachen
-  'resize': function(socketId, geometry){ 
-    if(!streamer[socketId] || !Array.isArray(geometry)) return;
-    log(geometry);
-    streamer[socketId].cols = geometry[0] || 80;
-    streamer[socketId].rows = geometry[1] || 24;
-    streamer[socketId].broadcast({'re': geometry});
+  'resize': function(id, geometry){ 
+    if(!clients[id].streamer || !Array.isArray(geometry)) return;
+    clients[id].streamer.cols = geometry[0] || 80;
+    clients[id].streamer.rows = geometry[1] || 24;
+    clients[id].streamer.broadcast({'re': geometry});
   }
 }
 

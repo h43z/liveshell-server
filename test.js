@@ -91,7 +91,7 @@ describe("Register command", function(){
 
 });
 
-describe("Stream (login) command", function(){
+describe("Login command", function(){
    
   describe("login with wrong username/password",function(){
     it("should show error", function(done){
@@ -99,7 +99,7 @@ describe("Stream (login) command", function(){
       ws.on("open", function(){
 				var userName = Math.random().toString(36).slice(2);
         var password = "xxxxx";
-        ws.send('{"stream": ["' + userName + '","' + password + '"]}');
+        ws.send('{"login": ["' + userName + '","' + password + '"]}');
         ws.on("message", function(msg){
           assert.deepEqual(JSON.parse(msg), {error: "wrong username/password"});   
           done();
@@ -114,7 +114,7 @@ describe("Stream (login) command", function(){
       ws.on("open", function(){
 				var userName = Math.random().toString(36).slice(2);
         var password = "xxxxx";
-        ws.send('{"stream": 1}');
+        ws.send('{"login": 1}');
         ws.on("message", function(msg){
           assert.deepEqual(JSON.parse(msg), {error: "no user/pass array given"});   
           done();
@@ -127,7 +127,7 @@ describe("Stream (login) command", function(){
 		it("should return username and password", function(done){
       var ws = new WebSocket("ws://localhost:8080");
       ws.on("open", function(){
-        ws.send('{"stream": ["' + userName + '","pass123"]}');
+        ws.send('{"login": ["' + userName + '","pass123"]}');
         ws.on("message", function(msg){
           assert.deepEqual(JSON.parse(msg), {userName: userName, password: "pass123", error: 0});   
           done();
