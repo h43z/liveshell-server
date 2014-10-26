@@ -154,6 +154,29 @@ describe("Follow command", function(){
     });
   });
   
+  describe("follow user and get his output",function(){
+		it("should show output of streamer", function(done){
+			var ws1 = new WebSocket("ws://localhost:8080");
+			var ws2 = new WebSocket("ws://localhost:8080");
+			ws1.on("open", function(){
+				ws1.once("message", function(msg){
+					ws2.send('{"follow": "' + userName + '"}');
+					ws1.send('{"o":"hello"}')
+				});
+				ws1.send('{"login": ["' + userName + '","pass123"]}');
+			});
+			
+			ws2.on("open", function(){
+				ws2.on("message", function(msgx){
+					assert.deepEqual(JSON.parse(msgx), {"o": "hello","f": userName});   
+					done();
+				});
+			});
+			
+			
+    });
+  });
+  
 });
 
 
