@@ -47,6 +47,7 @@ exports.newStreamer = function(id, userName){
 				this.viewers.push(viewer);
 				clients[viewer].following.push(this.userName);
 				_this.emit(this.socketId, {"viewer": this.viewers.length});
+				//emit geometry and init screen to viewer
 			}
 		},
 		"removeViewer": function(viewer){
