@@ -92,7 +92,7 @@ describe("Register command", function(){
 });
 
 describe("Login command", function(){
-   
+ 
   describe("login with wrong username/password",function(){
     it("should show error", function(done){
       var ws = new WebSocket("ws://localhost:8080");
@@ -107,7 +107,7 @@ describe("Login command", function(){
       });
     });
   });
-  
+
   describe("login with missing username/password",function(){
 		it("should show error", function(done){
       var ws = new WebSocket("ws://localhost:8080");
@@ -122,16 +122,16 @@ describe("Login command", function(){
       });
     });
   });
-
+  
   describe("login with existing user creds",function(){
 		it("should return username and password", function(done){
-      var ws = new WebSocket("ws://localhost:8080");
-      ws.on("open", function(){
-        ws.send('{"login": ["' + userName + '","pass123"]}');
-        ws.on("message", function(msg){
+      var wsc = new WebSocket("ws://localhost:8080");
+      wsc.on("open", function(){
+        wsc.on("message", function(msg){
           assert.deepEqual(JSON.parse(msg), {userName: userName, password: "pass123", error: 0});   
           done();
         });
+          wsc.send('{"login": ["' + userName + '","pass123"]}');
       });
     });
   });
@@ -140,7 +140,7 @@ describe("Login command", function(){
 });
 
 describe("Follow command", function(){
-   
+  
   describe("follow non streaming user",function(){
     it("should show error", function(done){
       var ws = new WebSocket("ws://localhost:8080");
@@ -154,29 +154,27 @@ describe("Follow command", function(){
     });
   });
   
-  describe("follow user and get his output",function(){
+  describe("follow streamer and get his output",function(){
 		it("should show output of streamer", function(done){
 			var ws1 = new WebSocket("ws://localhost:8080");
 			var ws2 = new WebSocket("ws://localhost:8080");
-			ws1.on("open", function(){
-				ws1.once("message", function(msg){
-					ws2.send('{"follow": "' + userName + '"}');
-					ws1.send('{"o":"hello"}')
-				});
-				ws1.send('{"login": ["' + userName + '","pass123"]}');
+			ws1.on("open", function(){	
+				ws2.on("open", function(){
+					
+					ws1.once("message", function(msg){
+						ws2.send('{"follow": "' + userName + '"}', function(err){
+								ws1.send('{"o": "hello"}');
+							});	
+					});		
+					ws2.on("message", function(msgx){
+						assert.deepEqual(JSON.parse(msgx), {"o": "hello","f": userName});   
+						done();
+					});	
+					ws1.send('{"login": ["' + userName + '","pass123"]}');
+				});	
 			});
-			
-			ws2.on("open", function(){
-				ws2.on("message", function(msgx){
-					assert.deepEqual(JSON.parse(msgx), {"o": "hello","f": userName});   
-					done();
-				});
-			});
-			
-			
     });
   });
-  
 });
 
 

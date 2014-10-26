@@ -12,14 +12,14 @@ streaming = {}
 var streamer = {};
 var viewer = {};
 var registeredNames = {};
-
+var counter = 0;
 
 wss.on('connection', function(ws){
-  var socketId = ws.upgradeReq.headers['sec-websocket-key'];
-  helpers.log("new connection", socketId);
+  var socketId = ws.upgradeReq.headers['sec-websocket-key'] + counter++;
   clients[socketId] = {ws: ws, streamer: null, following: []};
+  helpers.log("new connection", socketId);
 
-  ws.on('message', function(msg) {
+  ws.on('message', function(msg){
 		helpers.log(msg);
     var json = helpers.validate(msg, socketId);
     if(json){
@@ -28,9 +28,12 @@ wss.on('connection', function(ws){
   }); 
 
   ws.on('close', function(){
+		if(!clients[socketId]) return;
 		helpers.log("removed connection", socketId);
 		clients[socketId].following.forEach(function(streamer){
-			clients[streaming[streamer]].streamer.removeViewer(socketId);
+			if(clients[streaming[streamer]]){
+				clients[streaming[streamer]].streamer.removeViewer(socketId);
+			}
 		});
 		delete clients[socketId];
 		delete streaming[socketId];
