@@ -12,10 +12,10 @@ streaming = {}
 var streamer = {};
 var viewer = {};
 var registeredNames = {};
-var counter = 0;
 
 wss.on('connection', function(ws){
-  var socketId = ws.upgradeReq.headers['sec-websocket-key'] + counter++;
+  var socketId = ws.upgradeReq.headers['sec-websocket-key'];
+  socketId += Math.random().toString(36).slice(2);
   clients[socketId] = {ws: ws, streamer: null, following: []};
   helpers.log("new connection", socketId);
 
