@@ -1,17 +1,19 @@
 {
   "name": "liveshell-server",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "",
   "main": "server.js",
   "dependencies": {
     "nedb": "^0.11.1",
     "ws": "^0.4.32"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "should": "^4.1.0"
+  },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "mocha -R spec",
     "start": "node server.js"
   },
-  "author": "",
+  "author": "h43z",
   "license": "ISC"
 }
